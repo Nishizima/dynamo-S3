@@ -57,6 +57,8 @@ class S3UploadAction implements RequestHandlerInterface
             } catch (MultipartUploadException $e) {
                 $params = $e->getState()->getId();
                 $result = $s3Client->abortMultipartUpload($params);
+
+                return new JsonResponse($e->getMessage(),500);
             }
         }
 

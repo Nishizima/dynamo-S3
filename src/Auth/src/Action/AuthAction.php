@@ -33,13 +33,4 @@ class AuthAction implements MiddlewareInterface
         }
     }
 
-//    public function process(ServerRequestInterface $request, DelegateInterface $delegate)
-//    {
-//        if (! $this->auth->hasIdentity()) {
-//            return new RedirectResponse($this->router->generateUri('painel.login'));
-//        }
-//        $identity = $this->auth->getIdentity();
-//
-//        return $delegate->process($request->withAttribute(self::class, $identity));
-//    }
 }
