@@ -9,6 +9,7 @@ namespace App\User;
 
 use Aws\DynamoDb\Marshaler;
 use Aws\Sdk;
+use PHPUnit\Util\Json;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -32,9 +33,6 @@ class UserListAction implements RequestHandlerInterface
 
         $tableName = 'user';
 
-        $email = $request->getAttribute('key');
-
-
             $params = [
                 'TableName' => $tableName,
                 'ProjectionExpression' => '#N, email, #R',
@@ -55,8 +53,7 @@ class UserListAction implements RequestHandlerInterface
                 return new JsonResponse($resp,200);
 
             } catch (DynamoDbException $e) {
-                echo "Unable to query:\n";
-                echo $e->getMessage() . "\n";
+                return new JsonResponse([],404);
             }
     }
 

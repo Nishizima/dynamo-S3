@@ -7,8 +7,10 @@
  */
 namespace App\User;
 
+use App\Filter\UserFilter;
 use Aws\DynamoDb\Marshaler;
 use Aws\Sdk;
+use PHPUnit\Runner\Exception;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -36,6 +38,14 @@ class UserDeleteAction implements RequestHandlerInterface
 
             $id = $request->getAttribute('key');
 
+            $validator = new UserFilter();
+            $resp = $validator->filterUserEmail(['email' => $id]);
+
+            if($resp !== true)
+            {
+                return new JsonResponse($resp,422);
+            }
+
             $body = [];
             mb_parse_str((string)$request->getBody(), $data);
 
@@ -44,7 +54,7 @@ class UserDeleteAction implements RequestHandlerInterface
             $expression = "";
 
             if(count($data) > 1)
-                throw new \Exception("Too many conditional fields");
+                return new JsonResponse(['message' => "Too many conditional fields"]);
 
             if(!empty($data['password']))
             {
@@ -62,6 +72,15 @@ class UserDeleteAction implements RequestHandlerInterface
                 $dataeav[':r'] = ($data['role']);
                 $dataname['#R'] = "role";
                 $expression .= empty($expression) ? "#R = :r" : ", #R = :r";
+            }
+
+            $validator = new UserFilter();
+
+            $resp = $validator->filterUserUpdate($data);
+
+            if($resp !== true)
+            {
+                return new JsonResponse($resp,422);
             }
 
             $key = $marshaler->marshalJson(json_encode(['email' => $id]));
@@ -85,10 +104,16 @@ class UserDeleteAction implements RequestHandlerInterface
 
             try {
                 $result = $dynamodb->deleteItem($params);
-                return new JsonResponse($result,200);
 
-            } catch (DynamoDbException $e) {
-                return new JsonResponse([],500);
+                if($result['@metadata']['statusCode'] === 200)
+                    return new JsonResponse([],204);
+                else
+                {
+                    return new JsonResponse([],404);
+                }
+
+            } catch (Exception $e) {
+                return new JsonResponse([],404);
             }
         }
 

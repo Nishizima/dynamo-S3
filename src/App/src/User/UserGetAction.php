@@ -9,12 +9,14 @@ namespace App\User;
 
 use Aws\DynamoDb\Marshaler;
 use Aws\Sdk;
+use PHPUnit\Util\Json;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use GuzzleHttp;
 use Zend\Diactoros\Response\JsonResponse;
+use App\Filter\UserFilter;
 
 class UserGetAction implements RequestHandlerInterface
 {
@@ -34,6 +36,13 @@ class UserGetAction implements RequestHandlerInterface
 
         $email = $request->getAttribute('key');
 
+        $validator = new UserFilter();
+        $resp = $validator->filterUserEmail(['email' => $email]);
+
+        if($resp !== true)
+        {
+            return new JsonResponse($resp,422);
+        }
 
             $key = $marshaler->marshalJson(json_encode(array('email'=>$email)));
 
@@ -46,7 +55,10 @@ class UserGetAction implements RequestHandlerInterface
                 $result = $dynamodb->getItem($params);
                 //print_r($result['Item']['password']['S']); exit;
 
-                return new JsonResponse($result["Item"],202);
+                if(!empty($result["Item"]))
+                    return new JsonResponse($result["Item"],200);
+                else
+                    return new JsonResponse([],404);
 
             } catch (DynamoDbException $e) {
                 return new JsonResponse([],404);

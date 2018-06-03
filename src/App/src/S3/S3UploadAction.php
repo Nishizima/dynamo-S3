@@ -7,6 +7,7 @@
  */
 namespace App\S3;
 
+use App\Filter\S3Filter;
 use Aws\Exception\MultipartUploadException;
 use Aws\Sdk;
 use Aws\S3\MultipartUploader;
@@ -33,6 +34,14 @@ class S3UploadAction implements RequestHandlerInterface
 
         $data = $request->getUploadedFiles();
 
+        $validator = new S3Filter();
+
+        $resp = $validator->filterUploadFile($_FILES);
+
+        if($resp !== true)
+        {
+            return new JsonResponse($resp,422);
+        }
 
         $uploadkeys = array();
 
@@ -52,17 +61,17 @@ class S3UploadAction implements RequestHandlerInterface
                 $result = $uploader->upload();
 
                 //print_r($result);
-                $uploadkeys[] = array('key' => $result['Key']);
+                $uploadkeys[] = array('fileName' => $result['Key']);
                 //echo "\n\nUpload complete: {$result['ObjectURL']}\n";
             } catch (MultipartUploadException $e) {
                 $params = $e->getState()->getId();
                 $result = $s3Client->abortMultipartUpload($params);
 
-                return new JsonResponse($e->getMessage(),500);
+                return new JsonResponse([],404);
             }
         }
 
-        return new JsonResponse($uploadkeys,200);
+        return new JsonResponse($uploadkeys,201);
 
     }
 }

@@ -8,6 +8,7 @@
 
 namespace App\User;
 
+use App\Filter\UserFilter;
 use Aws\DynamoDb\Marshaler;
 use Aws\Sdk;
 use PHPUnit\Util\Json;
@@ -37,35 +38,49 @@ class UserCreateAction implements RequestHandlerInterface
             $tableName = 'user';
             $data = $request->getParsedBody();
 
-            if(empty($data['email']))
-                throw new \Exception("email is required");
-            if(empty($data['password']))
-                throw new \Exception("password is required");
-            else
+
+
+            $validator = new UserFilter();
+            $resp = $validator->filterUserCreate(['email' => $data['email'],
+                                                  'password' => $data['password'],
+                                                  'name' => $data['name'],
+                                                  'role' => $data['role']]);
+
+            if($resp !== true)
+            {
+                return new JsonResponse($resp,422);
+            }
+
+            if(!empty($data['password']))
+            {
+                $password = $data['password'];
                 $data['password'] = md5($data['password']);
-            if(empty($data['name']))
-                throw new \Exception("name is required");
-            if(empty($data['role']))
-                throw new \Exception("role is required");
+            }
 
             $key = $marshaler->marshalJson(json_encode($data));
 
+            $data['password'] = $password;
+
+
             $params = [
                 'TableName' => $tableName,
-                'Item' => $key
+                'Item' => $key,
+                'ReturnValues' => 'ALL_OLD'
             ];
 
             try {
                 $result = $dynamodb->putItem($params);
-
-                return new JsonResponse($result,200); exit;
+                if($result['@metadata']['statusCode'] === 200)
+                    return new JsonResponse($data,201);
+                else
+                    return new JsonResponse([],404);
 
             } catch (DynamoDbException $e) {
-                return new JsonResponse([],500);
+                return new JsonResponse([],404);
             }
         }
 
-        return new JsonResponse([],200);
+        return new JsonResponse([],404);
 
 
     }

@@ -29,7 +29,7 @@ class AuthAction implements MiddlewareInterface
 
         }catch(\Exception $e)
         {
-            return new JsonResponse($e->getMessage(),500);
+            return new JsonResponse([],404);
         }
     }
 

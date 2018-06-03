@@ -7,6 +7,7 @@
  */
 namespace App\S3;
 
+use App\Filter\S3Filter;
 use Aws\Exception\MultipartUploadException;
 use Aws\Sdk;
 use Aws\S3\MultipartUploader;
@@ -34,6 +35,15 @@ class S3UrlAction implements RequestHandlerInterface
 
         $key = urldecode($request->getAttribute('key'));
 
+        $validator = new S3Filter();
+        $resp = $validator->filterFilename(['filename' => $key]);
+
+        if($resp !== true)
+        {
+            return new JsonResponse($resp,422);
+        }
+
+
         $cmd = $s3Client->getCommand('GetObject', [
             'Bucket' => $bucket,
             'Key'    => $key
@@ -43,7 +53,7 @@ class S3UrlAction implements RequestHandlerInterface
 
 // Get the actual presigned-url
         $presignedUrl = (string) $request->getUri();
-        return new JsonResponse($presignedUrl,200);
+        return new JsonResponse(['fileUrl' => $presignedUrl],200);
 
 
     }

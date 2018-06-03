@@ -43,17 +43,17 @@ return function (Application $app, MiddlewareFactory $factory, ContainerInterfac
 
     //$app->get('/user/list', App\User\UserListAction::class, 'user.list');
     $app->post('/v1/user/login', App\User\UserLoginAction::class, 'user.login');
-    $app->get('/v1/user/list', [Auth\Action\AuthAction::class, App\User\UserListAction::class], 'user.list');
-    $app->get('/v1/user/get/{key}', [Auth\Action\AuthAction::class, App\User\UserGetAction::class], 'user.get');
-    $app->post('/v1/user/create', [Auth\Action\AuthAction::class, App\User\UserCreateAction::class], 'user.create');
-    $app->put('/v1/user/update/{key}', [Auth\Action\AuthAction::class, App\User\UserUpdateAction::class], 'user.update');
-    $app->delete('/v1/user/delete/{key}', [Auth\Action\AuthAction::class, App\User\UserDeleteAction::class], 'user.delete');
+    $app->get('/v1/users', [Auth\Action\AuthAction::class, App\User\UserListAction::class], 'user.list');
+    $app->get('/v1/user/{key}', [Auth\Action\AuthAction::class, App\User\UserGetAction::class], 'user.get');
+    $app->post('/v1/user', [Auth\Action\AuthAction::class, App\User\UserCreateAction::class], 'user.create');
+    $app->put('/v1/user/{key}', [Auth\Action\AuthAction::class, App\User\UserUpdateAction::class], 'user.update');
+    $app->delete('/v1/user/{key}', [Auth\Action\AuthAction::class, App\User\UserDeleteAction::class], 'user.delete');
 
-    $app->post('/v1/s3/upload', [Auth\Action\AuthAction::class, App\S3\S3UploadAction::class], 's3.upload');
-    $app->get('/v1/s3/makeurl/{key}', [Auth\Action\AuthAction::class, App\S3\S3UrlAction::class], 's3.makeurl');
+    $app->post('/v1/s3', [Auth\Action\AuthAction::class, App\S3\S3UploadAction::class], 's3.upload');
+    $app->get('/v1/s3/{key}', [Auth\Action\AuthAction::class, App\S3\S3UrlAction::class], 's3.makeurl');
 
-    $app->post('/v1/s3/noauth/upload',  App\S3\S3UploadAction::class, 's3.uploadnoauth');
-    $app->get('/v1/s3/noauth/makeurl/{key}',  App\S3\S3UrlAction::class, 's3.makeurlnoauth');
+    $app->post('/v1/s3/noauth',  App\S3\S3UploadAction::class, 's3.uploadnoauth');
+    $app->get('/v1/s3/noauth/{key}',  App\S3\S3UrlAction::class, 's3.makeurlnoauth');
 
 
 };

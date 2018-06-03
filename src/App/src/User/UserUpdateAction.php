@@ -7,6 +7,7 @@
  */
 namespace App\User;
 
+use App\Filter\UserFilter;
 use Aws\DynamoDb\Marshaler;
 use Aws\Sdk;
 use Psr\Http\Message\ResponseInterface;
@@ -36,6 +37,14 @@ class UserUpdateAction implements RequestHandlerInterface
 
             $id = $request->getAttribute('key');
 
+            $validator = new UserFilter();
+            $resp = $validator->filterUserEmail(['email' => $id]);
+
+            if($resp !== true)
+            {
+                return new JsonResponse($resp,422);
+            }
+
             $body = [];
             mb_parse_str((string)$request->getBody(), $data);
 
@@ -61,6 +70,15 @@ class UserUpdateAction implements RequestHandlerInterface
                 $expression .= empty($expression) ? "set #R = :r" : ", #R = :r";
             }
 
+            $validator = new UserFilter();
+
+            $resp = $validator->filterUserUpdate($data);
+
+            if($resp !== true)
+            {
+                return new JsonResponse($resp,422);
+            }
+
             $key = $marshaler->marshalJson(json_encode(['email' => $id]));
 
             $eav = $marshaler->marshalJson(json_encode($dataeav));
@@ -79,10 +97,14 @@ class UserUpdateAction implements RequestHandlerInterface
 
             try {
                 $result = $dynamodb->updateItem($params);
-                return new JsonResponse($result['Attributes'],200);
+
+                if($result['@metadata']['statusCode'] === 200)
+                    return new JsonResponse($result['Attributes'],200);
+                else
+                    return new JsonResponse([],404);
 
             } catch (DynamoDbException $e) {
-                return new JsonResponse([],500);
+                return new JsonResponse([],404);
             }
         }
 

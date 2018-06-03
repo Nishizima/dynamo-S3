@@ -18,6 +18,8 @@ use Zend\Diactoros\Response\JsonResponse;
 use Zend\Expressive\Router\RouterInterface;
 use Firebase\JWT\JWT;
 
+use App\Filter\UserFilter;
+
 class UserLoginAction implements RequestHandlerInterface
 {
     private $auth;
@@ -41,17 +43,12 @@ class UserLoginAction implements RequestHandlerInterface
     {
         $params = $request->getParsedBody();
 
-        if (empty($params['username'])) {
-            return new JsonResponse([
-                'error' => 'The username cannot be empty'
-            ],202);
-        }
+        $validator = new UserFilter();
+        $resp = $validator->filterUserLogin(['username' => $params['username'], 'password' => $params['password']]);
 
-        if (empty($params['password'])) {
-            return new JsonResponse([
-                'username' => $params['username'],
-                'error'    => 'The password cannot be empty',
-            ],202);
+        if($resp !== true)
+        {
+            return new JsonResponse($resp,422);
         }
 
         $this->authAdapter->setUsername($params['username']);
@@ -59,10 +56,7 @@ class UserLoginAction implements RequestHandlerInterface
 
         $result = $this->auth->authenticate();
         if (!$result->isValid()) {
-            return new JsonResponse([
-                'username' => $params['username'],
-                'error'    => 'The credentials provided are not valid',
-            ],202);
+            return new JsonResponse([],404);
         }
 
         $data = $result->getIdentity();
@@ -76,7 +70,7 @@ class UserLoginAction implements RequestHandlerInterface
         $jwt = JWT::encode($token, getenv("JWT_SECRET_KEY"));
 
 
-        return new JsonResponse(['token' =>$jwt],200);
+        return new JsonResponse(['token' =>$jwt],201);
     }
 
 
